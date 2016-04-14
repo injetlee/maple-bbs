@@ -16,6 +16,7 @@ from flask_mail import Mail
 from flask_principal import Principal
 from itsdangerous import URLSafeTimedSerializer
 from flask_sqlalchemy import SQLAlchemy
+from celery import Celery
 
 
 def register_login(app):
@@ -37,7 +38,7 @@ def register_redis(app):
 
 def register_routes(app):
     from maple.forums.views import site
-    app.register_blueprint(site,url_prefix=app.config["FORUMS_URL"])
+    app.register_blueprint(site, url_prefix=app.config["FORUMS_URL"])
     from maple.auth.views import site
     app.register_blueprint(site, url_prefix=app.config["AUTH_URL"])
     from maple.question.views import site
@@ -47,9 +48,12 @@ def register_routes(app):
     from maple.admin.views import site
     app.register_blueprint(site, url_prefix=app.config["ADMIN_URL"])
     from maple.board.views import site
-    app.register_blueprint(site,url_prefix=app.config["BOARD_URL"] + '/<forums_url>')
+    app.register_blueprint(
+        site,
+        url_prefix=app.config["BOARD_URL"] + '/<forums_url>')
     from maple.user.views import site
-    app.register_blueprint(site, url_prefix=app.config["USER_URL"] + '/<user_url>')
+    app.register_blueprint(site,
+                           url_prefix=app.config["USER_URL"] + '/<user_url>')
 
 
 def register_db(app):
@@ -64,13 +68,9 @@ def register_form(app):
 
 def register_jinja2(app):
     from maple.main.records import load_online_users
-    from maple.main.filters import (safe_markdown,
-                                    safe_clean,
-                                    join_time,
-                                    judge, groups,
-                                    load_read_count,
-                                    load_user_count,
-                                    load_forums_count)
+    from maple.main.filters import (safe_markdown, safe_clean, join_time,
+                                    judge, groups, load_read_count,
+                                    load_user_count, load_forums_count)
     app.jinja_env.filters['safe_markdown'] = safe_markdown
     app.jinja_env.filters['safe_clean'] = safe_clean
     app.jinja_env.filters['judge'] = judge
@@ -84,18 +84,14 @@ def register_jinja2(app):
 
 def register_assets(app):
     bundles = {
-
-        'home_js': Bundle(
-            'style/js/jquery.min.js',
-            'style/js/bootstrap.min.js',
-            output='style/assets/home.js',
-            filters='jsmin'),
-
-        'home_css': Bundle(
-            'style/css/bootstrap.min.css',
-            output='style/assets/home.css',
-            filters='cssmin')
-        }
+        'home_js': Bundle('style/js/jquery.min.js',
+                          'style/js/bootstrap.min.js',
+                          output='style/assets/home.js',
+                          filters='jsmin'),
+        'home_css': Bundle('style/css/bootstrap.min.css',
+                           output='style/assets/home.css',
+                           filters='cssmin')
+    }
 
     assets = Environment(app)
     assets.register(bundles)
@@ -121,18 +117,36 @@ def create_app():
     app.config.from_object(config)
     return app
 
+
+def register_celery(app):
+    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+
+    class ContextTask(TaskBase):
+        abstract = True
+
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
+
+
 db = SQLAlchemy()
 app = create_app()
 mail = Mail(app)
 login_manager = register_login(app)
 principals = Principal(app)
 redis_data = register_redis(app)
+celery = register_celery(app)
 login_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 register(app)
 
-
-from flask import (render_template,g,request,send_from_directory)
+from flask import (render_template, g, request, send_from_directory)
 from flask_login import current_user
+
 
 @app.before_request
 def before_request():
@@ -148,7 +162,7 @@ def not_found(error):
     return render_template('templet/error_404.html'), 404
 
 
-@app.route('/robots.txt',methods=['GET'])
-@app.route('/favicon.ico',methods=['GET'])
+@app.route('/robots.txt', methods=['GET'])
+@app.route('/favicon.ico', methods=['GET'])
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])

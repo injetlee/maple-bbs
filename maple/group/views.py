@@ -7,13 +7,8 @@
 # *************************************************************************
 # !/usr/bin/env python
 # -*- coding=UTF-8 -*-
-from flask import (render_template,
-                   Blueprint,
-                   request,
-                   abort,
-                   jsonify,
-                   redirect,
-                   url_for)
+from flask import (render_template, Blueprint, request, abort, jsonify,
+                   redirect, url_for)
 from flask_login import (current_user, login_required)
 from maple import db
 from maple.main.utils import random_gift
@@ -37,8 +32,9 @@ def index():
     return render_template('group/group.html', groups=groups)
 
 
-@site.route('/<group>', methods=['GET'])
-def group(group):
+@site.route('', methods=['GET'], defaults={'number': 1})
+@site.route('/<group>?page=<int:number>', methods=['GET'])
+def group(group, number):
     group = Group.load_by_name(group)
     form = ApplyForm()
     return render_template('group/view.html', group=group, form=form)
@@ -57,7 +53,7 @@ def groups(group):
                          content=content)
         db.session.add(letter)
         db.session.commit()
-        user = User.query.filter_by(name= group.name).first()
+        user = User.query.filter_by(name=group.name).first()
         RedisData.set_notice(user)
         return redirect(url_for('group.group', group=group.name))
     else:
@@ -67,6 +63,7 @@ def groups(group):
         else:
             pass
         abort(404)
+
 
 @site.route('/<group>/view')
 def view(group):

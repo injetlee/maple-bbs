@@ -1,13 +1,13 @@
-#*************************************************************************
+#!/usr/bin/env python
+# -*- coding=UTF-8 -*-
+# *************************************************************************
 #   Copyright © 2015 JiangLin. All rights reserved.
 #   File Name: tags.py
 #   Author:JiangLin
 #   Mail:xiyang0807@gmail.com
 #   Created Time: 2016-02-07 12:34:33
-#*************************************************************************
-#!/usr/bin/env python
-# -*- coding=UTF-8 -*-
-from flask import render_template, Blueprint,request, g, jsonify
+# *************************************************************************
+from flask import render_template, Blueprint, request, g, jsonify
 from maple.question.models import Questions, Tags
 from maple.board.models import Board_F, Board_S
 from maple.question.forms import ReplyForm, PhotoForm, QuestionForm
@@ -35,22 +35,34 @@ def add_url(endpoint, values):
     values['forums_url'] = g.forums_url
 
 
-@site.route('', defaults={'class_url': None})
-@site.route('/<class_url>')
-def board(class_url):
+@site.route('', defaults={'class_url': None, 'number': 1})
+@site.route('?page=<int:number>', defaults={'class_url': None})
+@site.route('/<class_url>', defaults={'number': 1})
+@site.route('/<class_url>?page=<int:number>')
+def board(class_url, number):
     if class_url is None:
         board = Board_F.load_by_name(g.forums_url)
-        questions = Questions.load_by_kind(g.forums_url)
+        pages = (board.count.topic) // 20 + 1
+        questions = Questions.query.filter_by(kind=g.forums_url).offset(
+            (number - 1) * 20).limit(20)
         return render_template('board/board.html',
                                board=board,
+                               number=number,
+                               pages=pages,
                                questions=questions,
                                class_url=class_url)
     else:
         board = Board_S.query.join(Board_F).\
             filter(Board_F.enname_f == g.forums_url).\
             filter(Board_S.enname_s == class_url).first_or_404()
+        questions = (board.questions)[(number - 1) * 20:(number - 1) * 20 + 20]
+        pages = (board.count.topic) // 20 + 1
+
         return render_template('board/board_s.html',
                                board=board,
+                               questions=questions,
+                               pages=pages,
+                               number=number,
                                class_url=class_url)
 
 

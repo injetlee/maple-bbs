@@ -13,5 +13,11 @@
     <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 </a>
 {% import 'base/view.html' as view %}
-{{ view.view(board.questions) }}
+{{ view.view(questions) }}
+
+{% if  questions[0] %}
+{% import 'base/page.html' as page %}
+{{ page.page('board.board',number=number,pages=pages,kw=dict(class_url=class_url))}}
+{% endif %}
+
 {% endblock %}

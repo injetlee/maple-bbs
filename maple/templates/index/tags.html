@@ -10,4 +10,8 @@
 </ol>
 {% import 'base/view.html' as view %}
 {{ view.view(questions) }}
+{% if questions[0] %}
+{% import 'base/page.html' as page %}
+{{ page.page('forums.tag',number=number,pages=pages,kw=dict(tag=tag))}}
+{% endif %}
 {% endblock %}

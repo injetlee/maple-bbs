@@ -1,12 +1,12 @@
-#*************************************************************************
+#!/usr/bin/env python
+# -*- coding=UTF-8 -*-
+# *************************************************************************
 #   Copyright © 2015 JiangLin. All rights reserved.
 #   File Name: academy.py
 #   Author:JiangLin
 #   Mail:xiyang0807@gmail.com
 #   Created Time: 2016-02-07 12:34:33
-#*************************************************************************
-#!/usr/bin/env python
-# -*- coding=UTF-8 -*-
+# *************************************************************************
 from flask import render_template, Blueprint, flash, request, g, abort, jsonify,\
     redirect, url_for, session, current_app
 from flask_login import logout_user, current_user, login_required
@@ -14,7 +14,7 @@ from flask_principal import AnonymousIdentity, \
      identity_changed
 from werkzeug.security import generate_password_hash
 from maple.question.models import Questions, Replies, Collector
-from maple.user.models import User, UserSetting,Role,Permission
+from maple.user.models import User, UserSetting, Role, Permission
 from maple.user.forms import SettingForm, NewPasswdForm, PrivacyForm
 from maple.group.models import Message
 from maple.main.permissions import own_permission
@@ -158,7 +158,7 @@ def privacy():
             return return_errors(form)
         else:
             pass
-        form.online_status.data =  current_user.setting.online_status
+        form.online_status.data = current_user.setting.online_status
         form.topic_list.data = current_user.setting.topic_list
         form.rep_list.data = current_user.setting.rep_list
         form.ntb_list.data = current_user.setting.ntb_list

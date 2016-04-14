@@ -11,5 +11,6 @@ from flask_wtf import Form
 from wtforms import TextAreaField
 from maple.forms.forms import DataRequired, Length
 
+
 class ApplyForm(Form):
-    content = TextAreaField('申请理由:', [DataRequired(), Length(min=2,max=255)])
+    content = TextAreaField('申请理由:', [DataRequired(), Length(min=2, max=255)])

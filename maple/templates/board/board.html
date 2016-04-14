@@ -14,4 +14,9 @@
 </div>
 {% import 'base/view.html' as view %}
 {{ view.view(questions) }}
+
+{% if  questions[0] %}
+{% import 'base/page.html' as page %}
+{{ page.page('board.board',number=number,pages=pages)}}
+{% endif %}
 {% endblock %}
