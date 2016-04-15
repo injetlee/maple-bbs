@@ -16,7 +16,7 @@ from maple.main.utils import random_gift
 from maple.main.models import RedisData
 from maple.forms.forms import return_errors
 from flask_login import current_user, login_required
-from maple import db
+from maple import db,cache
 from re import split as sp
 
 site = Blueprint('board', __name__)
@@ -39,6 +39,7 @@ def add_url(endpoint, values):
 @site.route('?page=<int:number>', defaults={'class_url': None})
 @site.route('/<class_url>', defaults={'number': 1})
 @site.route('/<class_url>?page=<int:number>')
+@cache.cached(timeout=180)
 def board(class_url, number):
     if class_url is None:
         board = Board_F.load_by_name(g.forums_url)
@@ -67,6 +68,7 @@ def board(class_url, number):
 
 
 @site.route('/<class_url>/view')
+@cache.cached(timeout=180)
 def view(class_url):
     qid = request.args.get('qid')
     RedisData.set_read_count(qid)

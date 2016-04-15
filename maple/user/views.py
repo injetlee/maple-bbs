@@ -19,7 +19,7 @@ from maple.user.forms import SettingForm, NewPasswdForm, PrivacyForm
 from maple.group.models import Message
 from maple.main.permissions import own_permission
 from maple.forms.forms import return_errors
-from maple import redis_data, db
+from maple import redis_data, db,cache
 
 site = Blueprint('user', __name__)
 
@@ -38,6 +38,7 @@ def add_user_url(endpoint, values):
 
 
 @site.route('')
+@cache.cached(timeout=180)
 def index():
     user = User.query.filter_by(name=g.user_url).first_or_404()
     if g.user is not None and g.user.is_authenticated:
@@ -56,6 +57,7 @@ def index():
 
 @site.route('/<category>', defaults={'number': 1})
 @site.route('/<category>&page=<int:number>')
+@cache.cached(timeout=180)
 def category(category, number):
     user = User.query.filter_by(name=g.user_url).first_or_404()
     user_count = redis_data.hget('user:%s' % str(user.id), 'topic')

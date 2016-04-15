@@ -9,7 +9,7 @@
 # *************************************************************************
 from flask import (render_template, Blueprint)
 from maple.question.models import Tags, Questions
-from maple import app, login_serializer, login_manager, db
+from maple import app, login_serializer, login_manager, db,cache
 from maple.user.models import User
 from maple.board.models import Board_F
 from maple.group.models import Group
@@ -34,6 +34,7 @@ def user_loader(id):
 
 
 @site.route('/', methods=['GET'])
+@cache.cached(timeout=180)
 def index():
     from sqlalchemy import or_
     clubs = Group.query.limit(15)
@@ -59,6 +60,7 @@ def index():
 
 
 @site.route('/index', methods=['GET'])
+@cache.cached(timeout=180)
 def forums():
     boards = Board_F.query.all()
     return render_template('index/forums.html', boards=boards)
@@ -67,6 +69,7 @@ def forums():
 @site.route('/t', methods=['GET'], defaults={'tag': None, 'number': None})
 @site.route('/t/<tag>', methods=['GET'], defaults={'number': 1})
 @site.route('/t/<tag>?page=<int:number>', methods=['GET'])
+@cache.cached(timeout=180)
 def tag(tag, number):
     if tag is not None:
         pages = Questions.query.join(Questions.tags).\
@@ -84,6 +87,7 @@ def tag(tag, number):
         return render_template('index/all_tags.html', tags=tags)
 
 
-@site.route('/about', methods=['GET'])
-def about():
-    return render_template('index/about.html')
+# @site.route('/about', methods=['GET'])
+# @cache.cached(timeout=180)
+# def about():
+#     return render_template('index/about.html')

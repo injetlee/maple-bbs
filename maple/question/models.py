@@ -1,15 +1,26 @@
-#*************************************************************************
+#!/usr/bin/env python
+# -*- coding=UTF-8 -*-
+# *************************************************************************
 #   Copyright © 2015 JiangLin. All rights reserved.
 #   File Name: articledb.py
 #   Author:JiangLin
 #   Mail:xiyang0807@gmail.com
 #   Created Time: 2015-11-29 02:07:53
-#*************************************************************************
-#!/usr/bin/env python
-# -*- coding=UTF-8 -*-
+# *************************************************************************
 from maple import db
 from datetime import datetime
 from flask_login import current_user
+
+
+# class News(db.Model):
+#     __tablename__ = 'news'
+#     id = db.Column(db.Integer, primary_key=True)
+#     title = db.Column(db.String(60), nullable=False)
+#     url = db.Column(db.String(100), unique=True, nullable=False)
+#     time = db.Column(db.DateTime, nullable=False)
+#     content = db.Column(db.Text, nullable=False)
+#     category = db.Column(db.String(20), nullable=False)
+
 
 tag_question = db.Table('tag_question',
                         db.Column('tags_id',
@@ -69,8 +80,9 @@ class Questions(db.Model):
                                                     cascade='all,delete',
                                                     lazy='dynamic'))
 
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id',
-                                                    ondelete="CASCADE"))
+    author_id = db.Column(db.Integer,
+                          db.ForeignKey('users.id',
+                                        ondelete="CASCADE"))
     author = db.relationship('User',
                              backref=db.backref('questions',
                                                 cascade='all,delete-orphan',

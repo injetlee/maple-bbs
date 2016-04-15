@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding=UTF-8 -*-
-#*************************************************************************
+# *************************************************************************
 #   Copyright © 2015 JiangLin. All rights reserved.
 #   File Name: app.py
 #   Author:JiangLin
 #   Mail:xiyang0807@gmail.com
 #   Created Time: 2016-03-14 21:04:34
-#*************************************************************************
+# *************************************************************************
+from flask import (render_template, g, request, send_from_directory)
+from flask_login import current_user
 from flask import Flask
 from flask_assets import Environment, Bundle
 from flask_login import LoginManager, AnonymousUserMixin
@@ -16,7 +18,8 @@ from flask_mail import Mail
 from flask_principal import Principal
 from itsdangerous import URLSafeTimedSerializer
 from flask_sqlalchemy import SQLAlchemy
-from celery import Celery
+from flask_cache import Cache
+# from celery import Celery
 
 
 def register_login(app):
@@ -29,11 +32,6 @@ def register_login(app):
     return login_manager
 
 
-def register_redis(app):
-    config = app.config
-    redis_data = StrictRedis(db=config['REDIS_DB'],
-                             password=config['REDIS_PASSWORD'])
-    return redis_data
 
 
 def register_routes(app):
@@ -56,8 +54,6 @@ def register_routes(app):
                            url_prefix=app.config["USER_URL"] + '/<user_url>')
 
 
-def register_db(app):
-    db.init_app(app)
 
 
 def register_form(app):
@@ -96,6 +92,20 @@ def register_assets(app):
     assets = Environment(app)
     assets.register(bundles)
 
+def register_db(app):
+    db.init_app(app)
+
+def register_redis(app):
+    config = app.config
+    redis_data = StrictRedis(db=config['CACHE_REDIS_DB'],
+                             password=config['CACHE_REDIS_PASSWORD'])
+    return redis_data
+
+
+def register_cache(app):
+    cache = Cache(config={'CACHE_TYPE': 'redis'})
+    cache.init_app(app)
+    return cache
 
 class Anonymous(AnonymousUserMixin):
     id = 0
@@ -118,20 +128,20 @@ def create_app():
     return app
 
 
-def register_celery(app):
-    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
-    celery.conf.update(app.config)
-    TaskBase = celery.Task
+# def register_celery(app):
+#     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+#     celery.conf.update(app.config)
+#     TaskBase = celery.Task
 
-    class ContextTask(TaskBase):
-        abstract = True
+#     class ContextTask(TaskBase):
+#         abstract = True
 
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
+#         def __call__(self, *args, **kwargs):
+#             with app.app_context():
+#                 return TaskBase.__call__(self, *args, **kwargs)
 
-    celery.Task = ContextTask
-    return celery
+#     celery.Task = ContextTask
+#     return celery
 
 
 db = SQLAlchemy()
@@ -140,12 +150,10 @@ mail = Mail(app)
 login_manager = register_login(app)
 principals = Principal(app)
 redis_data = register_redis(app)
-celery = register_celery(app)
+cache = register_cache(app)
 login_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 register(app)
 
-from flask import (render_template, g, request, send_from_directory)
-from flask_login import current_user
 
 
 @app.before_request

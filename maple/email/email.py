@@ -11,11 +11,10 @@ from flask_mail import Message
 from threading import Thread
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
-from maple import app,celery
+from maple import app
 from maple import mail
 
 
-@celery.task
 def send_async_email(app, msg):
     with app.app_context():
         mail.send(msg)

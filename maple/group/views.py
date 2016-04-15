@@ -10,7 +10,7 @@
 from flask import (render_template, Blueprint, request, abort, jsonify,
                    redirect, url_for)
 from flask_login import (current_user, login_required)
-from maple import db
+from maple import db,cache
 from maple.main.utils import random_gift
 from maple.main.models import RedisData
 from maple.main.permissions import que_permission
@@ -27,6 +27,7 @@ site = Blueprint('group', __name__)
 
 
 @site.route('')
+@cache.cached(timeout=180)
 def index():
     groups = db.session.query(Group.kind).group_by(Group.kind).all()
     return render_template('group/group.html', groups=groups)
@@ -34,6 +35,7 @@ def index():
 
 @site.route('', methods=['GET'], defaults={'number': 1})
 @site.route('/<group>?page=<int:number>', methods=['GET'])
+@cache.cached(timeout=180)
 def group(group, number):
     group = Group.load_by_name(group)
     form = ApplyForm()
@@ -66,6 +68,7 @@ def groups(group):
 
 
 @site.route('/<group>/view')
+@cache.cached(timeout=180)
 def view(group):
     qid = request.args.get('qid')
     RedisData.set_read_count(qid)
